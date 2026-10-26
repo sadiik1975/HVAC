@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f6f4ef" />
+<meta name="description" content="Need a hand with your heating or cooling? Answer a few quick questions and get booked." />
+<title>Your Town Heating &amp; Air (Demo)</title>
+<link rel="stylesheet" href="/bootstrap.min.css" />
+<style>
+/* Brand colours: change these to re-theme. */
+:root{--brand:#12355b;--brand-dark:#0c2542}
+html,body{height:100%}
+body{background:#eef1f5;overflow:hidden}
+.bg-brand{background:var(--brand)!important}
+
+/* splash */
+#splash{position:fixed;inset:0;z-index:50;overflow-y:auto;background:var(--brand);color:#fff;transition:opacity .3s}
+#splash.hide{opacity:0;pointer-events:none}
+#splash .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem 1rem}
+#splash h1{max-width:560px;font-weight:700}
+#splash .lead{max-width:460px;opacity:.9}
+.icon-ring{width:84px;height:84px;border-radius:50%;background:#fff;color:var(--brand);display:flex;align-items:center;justify-content:center}
+
+/* app */
+#app{height:100%;display:flex;flex-direction:column;max-width:640px;margin:auto;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.who{min-width:0}
+.who .name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.typing-status{display:none}
+.who.is-typing .typing-status{display:inline}
+.who.is-typing .online-status{display:none}
+#chat{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;background:#f8f9fa}
+.msg{max-width:82%;padding:.6rem .9rem;margin-bottom:.6rem;border-radius:1rem;line-height:1.45;word-wrap:break-word;white-space:pre-wrap}
+.bot{align-self:flex-start;background:#fff;border:1px solid #dee2e6;border-bottom-left-radius:.25rem}
+.user{align-self:flex-end;background:#007bff;color:#fff;border-bottom-right-radius:.25rem}
+.typing span{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:#adb5bd;animation:b 1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes b{50%{opacity:.35}}
+#chips{padding:.5rem 1rem 0;background:#f8f9fa}
+#chips:empty{display:none}
+#chips .chip{margin:0 .4rem .5rem 0}
+.menu{position:absolute;bottom:100%;left:1rem;display:none;z-index:5}
+.menu.open{display:block}
+#themeBtn{border-color:rgba(255,255,255,.5);color:#fff}
+
+/* night mode */
+[data-theme=dark] body{background:#0b1220;color:#e5e9f0}
+[data-theme=dark] #app{background:#141c2b;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+[data-theme=dark] #chat,[data-theme=dark] #chips{background:#101826}
+[data-theme=dark] .bot{background:#1d2738;border-color:#2a3650;color:#e5e9f0}
+[data-theme=dark] #form{background:#141c2b!important;border-color:#2a3650!important}
+[data-theme=dark] .form-control{background:#1d2738;border-color:#2a3650;color:#e5e9f0}
+[data-theme=dark] .form-control::placeholder{color:#8a96ad}
+[data-theme=dark] .btn-outline-secondary{color:#c4ccda;border-color:#2a3650}
+[data-theme=dark] .btn-outline-secondary:hover{background:#2a3650}
+[data-theme=dark] .btn-outline-primary{color:#7cc0ff;border-color:#3b9cff}
+[data-theme=dark] .btn-outline-primary:hover{background:#3b9cff;color:#0b1220}
+[data-theme=dark] .menu.card{background:#1d2738;border-color:#2a3650}
+[data-theme=dark] .menu .btn-light{background:#1d2738;border-color:#1d2738;color:#e5e9f0}
+[data-theme=dark] .typing span{background:#8a96ad}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<script>
+/* Night from 7pm to 7am by the visitor's clock unless they picked a theme. */
+(function(){
+  var saved=null;try{saved=localStorage.getItem('hvac_theme')}catch(e){}
+  var h=new Date().getHours();
+  var t=saved||((h>=19||h<7)?'dark':'light');
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+</head>
+<body>
+
+<section id="splash" aria-label="Welcome">
+  <div class="wrap">
+    <div class="icon-ring mb-4" aria-hidden="true">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.9 6l14.2 12M19.1 6L4.9 18M9 3.5l3 2.5 3-2.5M9 20.5l3-2.5 3 2.5"/></svg>
+    </div>
+    <span class="badge badge-warning mb-3">Demo</span>
+    <h1 class="h1 mb-3">Need a hand with your heating or cooling?</h1>
+    <p class="lead mb-4">Answer a few quick questions and we'll get you booked — takes about a minute.</p>
+    <button class="btn btn-warning btn-lg px-5 font-weight-bold" id="startBtn">Start Chatting</button>
+  </div>
+</section>
+
+<main id="app">
+  <header class="bg-brand text-white d-flex align-items-center px-3 py-2">
+    <div class="who flex-grow-1" id="who">
+      <strong class="name">Your Town Heating &amp; Air (Demo)</strong>
+      <small class="online-status text-success">● <span class="text-white-50">Online</span></small>
+      <small class="typing-status text-warning">⌨ Typing...</small>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-light ml-2" id="themeBtn" aria-label="Switch day or night mode"></button>
+  </header>
+  <div id="chat" aria-live="polite"></div>
+  <div id="chips"></div>
+  <form class="border-top p-2 bg-white position-relative" id="form" autocomplete="off">
+    <div class="menu card shadow" id="menu"><button type="button" class="btn btn-light text-left" id="newChat">↺ New conversation</button></div>
+    <div class="input-group">
+      <div class="input-group-prepend"><button type="button" class="btn btn-outline-secondary" id="plus" aria-label="Menu">＋</button></div>
+      <input id="input" class="form-control" placeholder="Type your message…" aria-label="Message" enterkeyhint="send" />
+      <div class="input-group-append">
+        <button type="button" class="btn btn-outline-secondary" id="mic" aria-label="Voice input">🎤</button>
+        <button type="submit" class="btn btn-primary" aria-label="Send">➤</button>
+      </div>
+    </div>
+  </form>
+</main>
+
+<script src="/flow.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const F=window.Flow, C=F.COPY;
+const who=$('who'), chat=$('chat'), chips=$('chips');
+const setBotTyping=t=>who.classList.toggle('is-typing',t);
+
+const root=document.documentElement;
+function syncTheme(){
+  const dark=root.getAttribute('data-theme')==='dark';
+  $('themeBtn').textContent=dark?'☀ Day':'🌙 Night';
+}
+$('themeBtn').onclick=()=>{
+  const next=root.getAttribute('data-theme')==='dark'?'light':'dark';
+  root.setAttribute('data-theme',next);
+  try{localStorage.setItem('hvac_theme',next)}catch(e){}
+  syncTheme();
+};
+syncTheme();
+
+$('startBtn').onclick=()=>{$('splash').classList.add('hide');setTimeout(()=>{$('splash').style.display='none';$('input').focus()},600)};
+
+let step,lead,busy,session;
+const labels=l=>l.map(o=>o.label);
+const CHIPS={
+  job:()=>labels(F.JOBS),
+  urgency:()=>["It's urgent","It can wait"],
+  day:()=>labels(F.DAYS),
+  time:()=>labels(F.TIMES),
+  confirm:()=>["That's right","Let me fix it"],
+  more:()=>["We're good","One more thing"],
+};
+
+function add(text,cls){
+  const d=document.createElement('div');d.className='msg '+cls;
+  text.split(/\*\*(.+?)\*\*/).forEach((part,i)=>{
+    if(i%2){const s=document.createElement('strong');s.textContent=part;d.appendChild(s)}
+    else d.appendChild(document.createTextNode(part));
+  });
+  chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;
+}
+function showChips(){
+  chips.innerHTML='';
+  const set=CHIPS[step];if(!set)return;
+  set().forEach(label=>{
+    const b=document.createElement('button');b.type='button';b.className='chip btn btn-outline-primary rounded-pill';b.textContent=label;
+    b.onclick=()=>handle(label);chips.appendChild(b);
+  });
+}
+function botSay(text,cb){
+  busy=true;chips.innerHTML='';setBotTyping(true);
+  const t=document.createElement('div');t.className='msg bot typing';t.innerHTML='<span></span><span></span><span></span>';
+  chat.appendChild(t);chat.scrollTop=chat.scrollHeight;
+  const mine=session;
+  setTimeout(()=>{
+    if(mine!==session)return;
+    t.remove();add(text,'bot');busy=false;setBotTyping(false);
+    cb?cb():showChips();
+  },650);
+}
+function start(){
+  session=Symbol();chat.innerHTML='';chips.innerHTML='';setBotTyping(false);
+  step='job';lead={};busy=false;
+  botSay(C.greeting);
+}
+
+const PROMPTS={
+  job:()=>C.greeting,
+  urgency:()=>C.urgency,
+  detail:()=>C.detail,
+  day:()=>C.when,
+  time:()=>C.when,
+  name:()=>lead.urgent?C.emergencyName:C.name,
+  phone:()=>lead.urgent?C.emergencyPhone:C.namePhone,
+  confirm:()=>F.confirmPhone(lead.phone),
+};
+const askName=()=>{step='name';botSay(lead.urgent?C.emergencyName:C.name)};
+const askPhone=()=>{step='phone';botSay(lead.urgent?C.emergencyPhone:C.namePhone)};
+
+function offScript(text){
+  if(F.isPrice(text)){botSay(C.price);return}
+  if(F.isRobot(text)){botSay(C.robot);return}
+  if(F.isAffirm(text)&&PROMPTS[step]){botSay(PROMPTS[step]());return}
+  botSay(C.fallback);
+}
+
+async function deliver(){
+  const mine=session;busy=true;chips.innerHTML='';setBotTyping(true);
+  lead.id=lead.id||crypto.randomUUID();
+  const payload={id:lead.id,
+    name:lead.name,phone:lead.phone,job:lead.job,detail:lead.detail||'',urgent:!!lead.urgent,day:lead.day||'',time:lead.time||''};
+  let ok=false;
+  for(let i=0;i<3&&!ok;i++){
+    try{const r=await fetch('/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});ok=r.ok}catch{}
+    if(!ok&&i<2)await new Promise(r=>setTimeout(r,800));
+  }
+  if(mine!==session)return;
+  setBotTyping(false);busy=false;
+  if(!ok){step='confirm';botSay("Hmm, I couldn't save that just yet. Tap That's right to try again.");return}
+  step='more';
+  if(lead.urgent){step='done';botSay(F.closingUrgent(lead.phone),()=>{});}
+  else botSay(F.closing(lead.phone,lead.day,lead.time));
+}
+
+function handle(raw){
+  const text=raw.trim();
+  if(busy||!text)return;
+  $('input').value='';add(text,'user');
+  switch(step){
+    case 'job':{
+      const j=F.matchJob(text);
+      if(!j)return offScript(text);
+      lead.job=j.short;step='urgency';return botSay(C.urgency);
+    }
+    case 'urgency':{
+      const u=F.matchUrgency(text);
+      if(!u)return offScript(text);
+      lead.urgent=u==='urgent';
+      if(lead.urgent)return askName();
+      step='detail';return botSay(C.detail);
+    }
+    case 'detail':{
+      lead.detail=text.slice(0,200);step='day';
+      return botSay(F.acknowledge(text),()=>botSay(C.when));
+    }
+    case 'day':{
+      const d=F.matchDay(text);
+      if(!d)return offScript(text);
+      lead.day=d.value;step='time';return showChips();
+    }
+    case 'time':{
+      const t=F.matchTime(text);
+      if(!t)return offScript(text);
+      lead.time=t.value;return askName();
+    }
+    case 'name':{
+      if(F.isPrice(text)||F.isRobot(text))return offScript(text);
+      if(text.length<2)return botSay(C.fallback);
+      lead.name=text.slice(0,100);return askPhone();
+    }
+    case 'phone':{
+      const p=F.normalizePhone(text);
+      if(p){lead.phone=p;step='confirm';return botSay(F.confirmPhone(p))}
+      if(F.isPrice(text)||F.isRobot(text))return offScript(text);
+      return botSay(C.phoneRetry);
+    }
+    case 'confirm':{
+      const c=F.matchConfirm(text);
+      if(c==='ok')return deliver();
+      if(c==='fix'){delete lead.phone;return askPhone()}
+      return offScript(text);
+    }
+    case 'more':{
+      const m=F.matchMore(text);
+      if(m==='good'){step='done';return botSay(C.goodbye,()=>{})}
+      return botSay(C.fallback);
+    }
+    default:return botSay(C.goodbye,()=>{});
+  }
+}
+
+$('form').onsubmit=e=>{e.preventDefault();handle($('input').value)};
+
+/* voice input */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+$('mic').onclick=()=>{
+  if(!SR){alert('Voice input is not supported in this browser.');return}
+  const r=new SR();r.lang='en-US';r.onresult=ev=>{$('input').value=ev.results[0][0].transcript;$('input').focus()};r.start();
+};
+$('plus').onclick=()=>$('menu').classList.toggle('open');
+$('newChat').onclick=()=>{$('menu').classList.remove('open');start()};
+
+start();
+})();
+</script>
+</body>
+</html>

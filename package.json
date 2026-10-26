@@ -1,0 +1,9 @@
+{
+  "name": "boroughbuild-hvac-demo",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node --env-file=.env server.js",
+    "test": "node --test tests/*.test.js"
+  }
+}

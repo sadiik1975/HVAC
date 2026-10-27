@@ -6,9 +6,12 @@ is sent to a Telegram chat as one alert. Nothing is sent for abandoned conversat
 
 ```bash
 cp .env.example .env   # set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID
-npm start              # http://localhost:3100
+node --env-file=.env server.js  # http://localhost:3100
 npm test
 ```
+
+On Render, configure `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` as service
+environment variables. The production start command reads those variables directly.
 
 For a prospect demo, set `TELEGRAM_CHAT_ID` to the prospect's own chat so the lead lands
 on their phone. Visitor copy lives in `public/flow.js` (`COPY` and the quick-reply

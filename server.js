@@ -1,4 +1,4 @@
-// Zero-dependency server: node --env-file=.env server.js
+// Zero-dependency server; configuration is read from the process environment.
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');

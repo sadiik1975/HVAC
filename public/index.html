@@ -200,14 +200,24 @@ async function deliver(){
   lead.id=lead.id||crypto.randomUUID();
   const payload={id:lead.id,
     name:lead.name,phone:lead.phone,job:lead.job,detail:lead.detail||'',urgent:!!lead.urgent,day:lead.day||'',time:lead.time||''};
+  let failureMessage="Hmm, I couldn't save that just yet. This request isn't booked. Please try again or call the shop directly.";
   let ok=false;
   for(let i=0;i<3&&!ok;i++){
-    try{const r=await fetch('/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});ok=r.ok}catch{}
+    try{
+      const r=await fetch('/api/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      ok=r.ok;
+      if(!ok){
+        if(r.status===400)failureMessage="I couldn't verify those booking details, so this request isn't booked. Please tap Let me fix it or call the shop directly.";
+        else if(r.status===429)failureMessage="There have been too many booking attempts. This request isn't booked yet; please call the shop directly.";
+        else if(r.status===503)failureMessage="The shop's booking alerts aren't configured right now, so this request isn't booked. Please call the shop directly.";
+        else if(r.status===502)failureMessage="I couldn't notify the shop, so this request isn't booked. Please try again or call the shop directly.";
+      }
+    }catch{}
     if(!ok&&i<2)await new Promise(r=>setTimeout(r,800));
   }
   if(mine!==session)return;
   setBotTyping(false);busy=false;
-  if(!ok){step='confirm';botSay("Hmm, I couldn't save that just yet. Tap That's right to try again.");return}
+  if(!ok){step='confirm';botSay(failureMessage);return}
   step='more';
   if(lead.urgent){step='done';botSay(F.closingUrgent(lead.phone),()=>{});}
   else botSay(F.closing(lead.phone,lead.day,lead.time));

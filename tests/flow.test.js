@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const F = require('../public/flow.js');
-const { validateLead } = require('../server.js');
+const { validateLead, sendTelegram } = require('../server.js');
 
 test('phone validation and formatting', () => {
   assert.equal(F.normalizePhone('518-555-0147'), '(518) 555-0147');
@@ -64,4 +64,15 @@ test('server rejects incomplete leads and accepts complete ones', () => {
   assert.equal(validateLead({ ...base, phone: '123' }), null);
   assert.equal(validateLead({ ...base, time: '' }), null);
   assert.ok(validateLead({ ...base, urgent: true, detail: '', day: '', time: '' }));
+});
+
+test('Telegram rejection includes its reason for server logs', async (t) => {
+  const originalFetch = global.fetch;
+  global.fetch = async () => new Response(JSON.stringify({
+    ok: false,
+    description: 'Bad Request: chat not found',
+  }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  t.after(() => { global.fetch = originalFetch; });
+
+  await assert.rejects(sendTelegram('test'), /Telegram HTTP 400: Bad Request: chat not found/);
 });

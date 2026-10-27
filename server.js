@@ -62,7 +62,11 @@ async function sendTelegram(text) {
     body: JSON.stringify({ chat_id: TG_CHAT, text, disable_web_page_preview: true }),
     signal: AbortSignal.timeout(10000),
   });
-  if (!r.ok) throw new Error(`Telegram HTTP ${r.status}`);
+  const result = await r.json();
+  if (!r.ok || result.ok !== true) {
+    const description = typeof result.description === 'string' ? clean(result.description, 200) : '';
+    throw new Error(`Telegram HTTP ${r.status}${description ? `: ${description}` : ''}`);
+  }
 }
 
 const SEC = { 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin' };
@@ -110,4 +114,4 @@ const server = http.createServer(async (req, res) => {
 if (require.main === module) {
   server.listen(PORT, () => console.log(`Borough Build HVAC demo on http://localhost:${PORT}`));
 }
-module.exports = { validateLead, server };
+module.exports = { validateLead, sendTelegram, server };
